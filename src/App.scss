@@ -1,0 +1,27 @@
+.dragging:before {
+  content: attr(data-dragging);
+}
+
+.dragging {
+  background-color: paleturquoise;
+}
+
+button {
+  border: none;
+}
+
+.calendar {
+  position: relative;
+  border: 1px solid black;
+  width: 800px;
+  // height: 400px;
+}
+
+.entry {
+  background-color: blue;
+  color: white;
+  border-radius: 8px;
+  display: flex;
+  padding: 4px 8px;
+  font-size: 15px;
+}
