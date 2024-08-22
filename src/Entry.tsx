@@ -10,7 +10,6 @@ export interface Entry {
   title: string;
   startDt: any;
   duration: number;
-  displayOrder: number;
 }
 
 export interface EntryWithPosition extends Entry {

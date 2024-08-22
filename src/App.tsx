@@ -8,14 +8,18 @@ import {
   useSensors,
   pointerWithin,
 } from "@dnd-kit/core";
-import { createSnapModifier, snapCenterToCursor } from "@dnd-kit/modifiers";
+import {
+  createSnapModifier,
+  snapCenterToCursor,
+  restrictToParentElement,
+} from "@dnd-kit/modifiers";
 import moment from "moment";
 
 import "./App.scss";
 
 import { DraggableEntry, Entry, EntryWithPosition } from "./Entry";
 import { minutesToPixels, pixelsToMinutes } from "./util";
-import { getGroups, layout } from "./layout";
+import { getGroup, getGroups, layout, layoutGroupAfterMove } from "./layout";
 
 function App() {
   // const [isDropped, setIsDropped] = useState(false);
@@ -36,7 +40,6 @@ function App() {
       title: "Lunch break",
       startDt: moment("2024-01-01T05:00:00"),
       duration: 60,
-      displayOrder: 0,
       x: 0,
       y: minutesToPixels(300),
       width: "100%",
@@ -48,7 +51,6 @@ function App() {
       title: "Keynote",
       startDt: moment("2024-01-01T07:00:00"),
       duration: 60,
-      displayOrder: 0,
       x: 0,
       y: minutesToPixels(420),
       width: "100%",
@@ -60,7 +62,6 @@ function App() {
       title: "Workshop 2",
       startDt: moment("2024-01-01T03:00:00"),
       duration: 30,
-      displayOrder: 0,
       x: 0,
       y: minutesToPixels(180),
       width: "100%",
@@ -72,7 +73,6 @@ function App() {
       title: "Meeting 2",
       startDt: moment("2024-01-01T06:00:00"),
       duration: 30,
-      displayOrder: 0,
       x: 0,
       y: minutesToPixels(360),
       width: "100%",
@@ -84,7 +84,6 @@ function App() {
       title: "Workshop 1",
       startDt: moment("2024-01-01T03:30:00"),
       duration: 30,
-      displayOrder: 0,
       x: 0,
       y: minutesToPixels(210),
       width: "100%",
@@ -96,7 +95,6 @@ function App() {
       title: "Meeting 1",
       startDt: moment("2024-01-01T06:30:00"),
       duration: 30,
-      displayOrder: 0,
       x: 0,
       y: minutesToPixels(390),
       width: "100%",
@@ -140,8 +138,13 @@ function App() {
   return (
     <DndContext
       onDragEnd={handleDragEnd}
+      onDragStart={handleDragStart}
       // sensors={sensors}
-      modifiers={[snapToGridModifier]}
+      modifiers={[
+        snapToGridModifier,
+        // restrictToParentElement,
+        // snapCenterToCursor
+      ]}
       collisionDetection={pointerWithin}
     >
       <div style={{ display: "flex" }}>
@@ -161,7 +164,12 @@ function App() {
     </DndContext>
   );
 
+  function handleDragStart(event) {
+    console.log("event start", event);
+  }
+
   function handleDragEnd(event) {
+    console.log("event", event, mouseRef.current.pageX);
     // console.log("event", event);
     console.log(
       "mouse position",
@@ -173,21 +181,46 @@ function App() {
       console.log("Dropped");
       const { id } = event.active;
       const { x, y } = event.delta;
-      const dx = x / 800; // Change this
+      // const dx = x / 800; // Change this
       const deltaMinutes = pixelsToMinutes(y);
-      console.log("x", x, "y", y);
-      const newEntries = entries.map((entry) => {
-        if (entry.id === id) {
-          return {
-            ...entry,
-            startDt: moment(entry.startDt).add(deltaMinutes, "minutes"),
-            x: entry.x + x,
-            y: entry.y + y,
-          };
-        }
-        return entry;
-      });
-      setEntries(layout(newEntries));
+      // console.log("x", x, "y", y);
+      let entry = entries.find((entry) => entry.id === id)!;
+      entry = {
+        ...entry,
+        startDt: moment(entry.startDt).add(deltaMinutes, "minutes"),
+        x: entry.x + x,
+        y: entry.y + y,
+      };
+      // console.log("new entry start", entry.startDt.format("HH:mm"));
+      const groupIds = getGroup(
+        entry,
+        entries.filter((e) => e.id !== entry.id)
+      );
+      let group = entries.filter((e) => groupIds.has(e.id));
+      // console.log(
+      //   "new group",
+      //   group.map((e) => e.title)
+      // );
+      group = layoutGroupAfterMove(group, entry, x);
+      // console.log("after move", group);
+      const otherEntries = entries.filter(
+        (e) => !groupIds.has(e.id) && e.id !== entry.id
+      );
+      // console.log("other  entries", otherEntries);
+      // console.log([...otherEntries, ...group]);
+      setEntries(layout([...otherEntries, ...group]));
+      // const newEntries = entries.map((entry) => {
+      //   if (entry.id === id) {
+      //     return {
+      //       ...entry,
+      //       startDt: moment(entry.startDt).add(deltaMinutes, "minutes"),
+      //       x: entry.x + x,
+      //       y: entry.y + y,
+      //     };
+      //   }
+      //   return entry;
+      // });
+      // setEntries(layout(newEntries));
     }
   }
 }
