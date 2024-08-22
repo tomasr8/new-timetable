@@ -169,7 +169,7 @@ function App() {
   }
 
   function handleDragEnd(event) {
-    console.log("event", event, mouseRef.current.pageX);
+    // console.log("event", event, mouseRef.current.pageX);
     // console.log("event", event);
     console.log(
       "mouse position",
@@ -178,6 +178,7 @@ function App() {
       wrapperRef.current.offsetWidth
     );
     if (event.over && event.over.id === "calendar") {
+      const mousePosition = (mouseEventRef.current.pageX - wrapperRef.current.offsetLeft) / wrapperRef.current.offsetWidth;
       console.log("Dropped");
       const { id } = event.active;
       const { x, y } = event.delta;
@@ -201,7 +202,7 @@ function App() {
       //   "new group",
       //   group.map((e) => e.title)
       // );
-      group = layoutGroupAfterMove(group, entry, x);
+      group = layoutGroupAfterMove(group, entry, mousePosition);
       // console.log("after move", group);
       const otherEntries = entries.filter(
         (e) => !groupIds.has(e.id) && e.id !== entry.id

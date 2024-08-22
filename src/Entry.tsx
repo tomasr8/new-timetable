@@ -48,11 +48,12 @@ export function DraggableEntry({
   setDuration: _setDuration,
 }: DraggableEntryProps) {
   const resizeStartRef = useRef(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
   const [duration, setDuration] = useState(_duration);
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id,
-  });
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id,
+    });
   let style: Record<string, any> = transform
     ? {
         transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
@@ -76,7 +77,7 @@ export function DraggableEntry({
     // console.log('ref', sidebarRef.current);
     resizeStartRef.current = e.clientY;
     document.body.style.cursor = "ns-resize";
-    setIsDragging(true);
+    setIsResizing(true);
 
     function mouseMoveHandler(e) {
       // const dx = x - e.clientX; // Resize from left to right
@@ -99,7 +100,7 @@ export function DraggableEntry({
       if (newWidth >= 10) {
         _setDuration(newWidth);
       }
-      setIsDragging(false);
+      setIsResizing(false);
     };
 
     document.addEventListener("mousemove", mouseMoveHandler);
@@ -141,7 +142,9 @@ export function DraggableEntry({
       <div
         className="drag-handle"
         ref={setNodeRef}
-        style={{ cursor: isDragging ? undefined : "grab" }}
+        style={{
+          cursor: isResizing ? undefined : isDragging ? "grabbing" : "grab",
+        }}
         {...listeners}
         {...attributes}
       >

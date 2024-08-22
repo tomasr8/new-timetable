@@ -15,7 +15,7 @@ export function layout(entries: EntryWithPosition[]) {
     const groupEntries = entries.filter((entry) => group.has(entry.id));
     newEntries = [...newEntries, ...layoutGroup(groupEntries)];
   }
-  console.log(newEntries)
+  console.log(newEntries);
   return newEntries;
 }
 
@@ -47,7 +47,7 @@ export function layoutGroup(group: EntryWithPosition[]) {
 export function layoutGroupAfterMove(
   group: EntryWithPosition[],
   newEntry: EntryWithPosition,
-  x: number
+  mousePosition: number
 ) {
   const columnCounts = new Set(group.map((entry) => entry.maxColumn));
   const newColumnCount = lcm(...columnCounts);
@@ -57,15 +57,15 @@ export function layoutGroupAfterMove(
     maxColumn: newColumnCount,
   }));
 
-  if (newEntry.maxColumn !== 0) {
-    x += (800 * newEntry.column) / (newEntry.maxColumn + 1);
-  }
-  const selectedColumn = Math.round((newColumnCount * x) / 800);
+  // if (newEntry.maxColumn !== 0) {
+  //   x += (800 * newEntry.column) / (newEntry.maxColumn + 1);
+  // }
+  const selectedColumn = Math.round(newColumnCount * mousePosition);
   console.log(
     "selectedColumn",
     selectedColumn,
-    x,
-    x / 800,
+    // x,
+    // x / 800,
     newColumnCount,
     newEntry.column,
     newEntry.maxColumn
