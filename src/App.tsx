@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   DndContext,
   useDroppable,
@@ -26,6 +26,8 @@ function App() {
   // });
   // const sensors = useSensors(mouseSensor);
   // const draggableMarkup = <Draggable>Lunch break, 11-12</Draggable>;
+  const wrapperRef = useRef(null);
+  const mouseEventRef = useRef(null);
   const gridSize = minutesToPixels(5); // pixels
   const snapToGridModifier = createSnapModifier(gridSize);
   const _entries: EntryWithPosition[] = [
@@ -55,7 +57,7 @@ function App() {
     },
     {
       id: 3,
-      title: "Workshop",
+      title: "Workshop 2",
       startDt: moment("2024-01-01T03:00:00"),
       duration: 30,
       displayOrder: 0,
@@ -67,7 +69,7 @@ function App() {
     },
     {
       id: 4,
-      title: "Meeting",
+      title: "Meeting 2",
       startDt: moment("2024-01-01T06:00:00"),
       duration: 30,
       displayOrder: 0,
@@ -79,7 +81,7 @@ function App() {
     },
     {
       id: 5,
-      title: "Workshop",
+      title: "Workshop 1",
       startDt: moment("2024-01-01T03:30:00"),
       duration: 30,
       displayOrder: 0,
@@ -91,7 +93,7 @@ function App() {
     },
     {
       id: 6,
-      title: "Meeting",
+      title: "Meeting 1",
       startDt: moment("2024-01-01T06:30:00"),
       duration: 30,
       displayOrder: 0,
@@ -104,7 +106,36 @@ function App() {
   ];
   const [entries, setEntries] = useState(_entries);
 
+  console.log("entries", entries);
   console.log("getGroups", getGroups(entries));
+
+  useEffect(() => {
+    function onMouseMove(event) {
+      mouseEventRef.current = event;
+    }
+
+    document.addEventListener("mousemove", onMouseMove);
+    return () => {
+      document.removeEventListener("mousemove", onMouseMove);
+    };
+  }, []);
+
+  const makeSetDuration = (id) => (duration) => {
+    console.log("make setting duration", duration);
+    setEntries((entries) =>
+      layout(
+        entries.map((entry) => {
+          if (entry.id === id) {
+            return {
+              ...entry,
+              duration,
+            };
+          }
+          return entry;
+        })
+      )
+    );
+  };
 
   return (
     <DndContext
@@ -115,19 +146,31 @@ function App() {
     >
       <div style={{ display: "flex" }}>
         <TimeGutter />
-        <DroppableCalendar>
-          {entries.map((entry) => (
-            <DraggableEntry key={entry.id} {...entry} />
-          ))}
-        </DroppableCalendar>
+        <div ref={wrapperRef}>
+          <DroppableCalendar>
+            {entries.map((entry) => (
+              <DraggableEntry
+                key={entry.id}
+                setDuration={makeSetDuration(entry.id)}
+                {...entry}
+              />
+            ))}
+          </DroppableCalendar>
+        </div>
       </div>
     </DndContext>
   );
 
   function handleDragEnd(event) {
     // console.log("event", event);
+    console.log(
+      "mouse position",
+      mouseEventRef.current.pageX - wrapperRef.current.offsetLeft,
+      // get the width of wrapperRef
+      wrapperRef.current.offsetWidth
+    );
     if (event.over && event.over.id === "calendar") {
-      // console.log("Dropped");
+      console.log("Dropped");
       const { id } = event.active;
       const { x, y } = event.delta;
       const dx = x / 800; // Change this

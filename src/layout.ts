@@ -9,12 +9,13 @@ function overlap(a: Entry, b: Entry) {
 
 export function layout(entries: EntryWithPosition[]) {
   const groups = getGroups(entries);
-  console.log("groups", groups);
+  // console.log("groups", groups);
   let newEntries = [];
   for (const group of groups) {
     const groupEntries = entries.filter((entry) => group.has(entry.id));
     newEntries = [...newEntries, ...layoutGroup(groupEntries)];
   }
+  console.log(newEntries)
   return newEntries;
 }
 
@@ -35,7 +36,7 @@ export function layoutGroup(group: EntryWithPosition[]) {
     });
   }
   const maxColumn = getMaximumParallelEntries(newGroup);
-  console.log("maxColumn", maxColumn);
+  // console.log("maxColumn", maxColumn);
   const columnWidth = 100 / (maxColumn + 1);
   return newGroup.map((entry) => ({
     ...entry,
@@ -75,15 +76,6 @@ function dfs(
       continue;
     }
 
-    // console.log(
-    //   "curr",
-    //   curr.startDt,
-    //   curr.duration,
-    //   "entry",
-    //   entry.startDt,
-    //   entry.duration,
-    //   overlap(curr, entry)
-    // );
     if (overlap(curr, entry)) {
       seen.add(entry.id);
       group.add(entry.id);
