@@ -104,8 +104,8 @@ function App() {
   ];
   const [entries, setEntries] = useState(_entries);
 
-  console.log("entries", entries);
-  console.log("getGroups", getGroups(entries));
+  // console.log("entries", entries);
+  // console.log("getGroups", getGroups(entries));
 
   useEffect(() => {
     function onMouseMove(event) {
@@ -119,7 +119,7 @@ function App() {
   }, []);
 
   const makeSetDuration = (id) => (duration) => {
-    console.log("make setting duration", duration);
+    // console.log("make setting duration", duration);
     setEntries((entries) =>
       layout(
         entries.map((entry) => {
@@ -165,21 +165,20 @@ function App() {
   );
 
   function handleDragStart(event) {
-    console.log("event start", event);
+    // console.log("event start", event);
   }
 
   function handleDragEnd(event) {
     // console.log("event", event, mouseRef.current.pageX);
     // console.log("event", event);
-    console.log(
-      "mouse position",
-      mouseEventRef.current.pageX - wrapperRef.current.offsetLeft,
-      // get the width of wrapperRef
-      wrapperRef.current.offsetWidth
-    );
+    // console.log(
+    //   "mouse position",
+    //   mouseEventRef.current.pageX - wrapperRef.current.offsetLeft,
+    //   // get the width of wrapperRef
+    //   wrapperRef.current.offsetWidth
+    // );
     if (event.over && event.over.id === "calendar") {
       const mousePosition = (mouseEventRef.current.pageX - wrapperRef.current.offsetLeft) / wrapperRef.current.offsetWidth;
-      console.log("Dropped");
       const { id } = event.active;
       const { x, y } = event.delta;
       // const dx = x / 800; // Change this

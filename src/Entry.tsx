@@ -45,6 +45,8 @@ export function DraggableEntry({
   x,
   y,
   width,
+  column,
+  maxColumn,
   setDuration: _setDuration,
 }: DraggableEntryProps) {
   const resizeStartRef = useRef(null);
@@ -65,7 +67,8 @@ export function DraggableEntry({
     position: "absolute",
     top: y,
     left: x,
-    width,
+    // width,
+    width: column === maxColumn ? width : `calc(${width} - 6px)`,
     height: minutesToPixels(duration),
   };
 
@@ -116,7 +119,7 @@ export function DraggableEntry({
   let text;
   if (duration <= 20) {
     text = (
-      <div>
+      <div style={{ whiteSpace: "nowrap" }}>
         {title}, {newStart} - {newEnd}
       </div>
     );

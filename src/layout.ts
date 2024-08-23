@@ -15,7 +15,7 @@ export function layout(entries: EntryWithPosition[]) {
     const groupEntries = entries.filter((entry) => group.has(entry.id));
     newEntries = [...newEntries, ...layoutGroup(groupEntries)];
   }
-  console.log(newEntries);
+  // console.log(newEntries);
   return newEntries;
 }
 
@@ -49,43 +49,85 @@ export function layoutGroupAfterMove(
   newEntry: EntryWithPosition,
   mousePosition: number
 ) {
-  const columnCounts = new Set(group.map((entry) => entry.maxColumn));
+  const columnCounts = new Set(group.map((entry) => entry.maxColumn + 1));
   const newColumnCount = lcm(...columnCounts);
   group = group.map((entry) => ({
     ...entry,
-    column: (entry.column * newColumnCount) / entry.maxColumn,
+    column: ((entry.column + 1) * newColumnCount) / (1 + entry.maxColumn) - 1,
     maxColumn: newColumnCount,
   }));
+  console.log("newColumnCount", newColumnCount);
+  console.log(
+    "new columns",
+    group.map((entry) => entry.column)
+  );
+  newEntry = {
+    ...newEntry,
+    column:
+      ((newEntry.column + 1) * newColumnCount) / (1 + newEntry.maxColumn) - 1,
+    maxColumn: newColumnCount,
+  };
 
-  // if (newEntry.maxColumn !== 0) {
-  //   x += (800 * newEntry.column) / (newEntry.maxColumn + 1);
-  // }
-  const selectedColumn = Math.round(newColumnCount * mousePosition);
+  const selectedColumn = Math.floor(newColumnCount * mousePosition);
   console.log(
     "selectedColumn",
     selectedColumn,
-    // x,
-    // x / 800,
-    newColumnCount,
-    newEntry.column,
-    newEntry.maxColumn
+    newColumnCount * mousePosition,
+    mousePosition
   );
-  group = group.map((entry) => ({
-    ...entry,
-    column:
-      selectedColumn === 0
-        ? entry.column + 1
-        : entry.column <= selectedColumn
-        ? entry.column
-        : entry.column + 1,
-  }));
+
+  const rightToLeft = selectedColumn < newEntry.column;
+  console.log("rightToLeft", rightToLeft);
+  if (selectedColumn === 0) {
+    group = group.map((entry) => ({
+      ...entry,
+      column: entry.column + 1,
+    }));
+  } else if (selectedColumn === newColumnCount - 1) {
+  } else if (rightToLeft) {
+    group = group.map((entry) => ({
+      ...entry,
+      column: entry.column < selectedColumn ? entry.column : entry.column + 1,
+    }));
+  } else {
+    group = group.map((entry) => ({
+      ...entry,
+      column: entry.column <= selectedColumn ? entry.column : entry.column + 1,
+    }));
+  }
+
+  // group = group.map((entry) => ({
+  //   ...entry,
+  //   column:
+  //     selectedColumn === 0
+  //       ? entry.column + 1
+  //       : entry.column < selectedColumn
+  //       ? entry.column
+  //       : entry.column + 1,
+  // }));
+  console.log(
+    "after",
+    group.map((entry) => entry.column)
+  );
+  console.log(
+    "newEntry.column",
+    rightToLeft ? selectedColumn : selectedColumn + 1
+  );
   group = [
     ...group,
-    { ...newEntry, column: selectedColumn, maxColumn: newColumnCount },
+    {
+      ...newEntry,
+      column: rightToLeft ? selectedColumn : selectedColumn + 1,
+      maxColumn: newColumnCount,
+    },
   ];
   // const columns = 2; // TODO: calculate based on max number of parallel entries in the group
   // const columnWidth = 100 / columns;
   const sortedGroup = [...group].sort((a, b) => a.column - b.column);
+  console.log(
+    "sorted",
+    sortedGroup.map((entry) => entry.column)
+  );
   const newGroup = [];
   for (const entry of sortedGroup) {
     const overlappingEntries = newGroup.filter((e) => overlap(e, entry));
