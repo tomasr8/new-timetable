@@ -32,6 +32,10 @@ button {
   border: none;
   padding: 0;
   outline: none;
+
+  &.block {
+    background-color: rgb(4, 115, 134);
+  }
 }
 
 .drag-handle {
@@ -43,6 +47,7 @@ button {
   font-size: 15px;
   width: 100%;
   // cursor: grab;
+
 }
 
 .resize-handle {

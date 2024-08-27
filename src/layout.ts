@@ -59,11 +59,11 @@ export function layoutGroupAfterMove(
     column: ((entry.column + 1) * newColumnCount) / (1 + entry.maxColumn) - 1,
     maxColumn: newColumnCount,
   }));
-  console.log("newColumnCount", newColumnCount);
-  console.log(
-    "new columns",
-    group.map((entry) => entry.column)
-  );
+  // console.log("newColumnCount", newColumnCount);
+  // console.log(
+  //   "new columns",
+  //   group.map((entry) => entry.column)
+  // );
   newEntry = {
     ...newEntry,
     column:
@@ -72,15 +72,15 @@ export function layoutGroupAfterMove(
   };
 
   const selectedColumn = Math.floor(newColumnCount * mousePosition);
-  console.log(
-    "selectedColumn",
-    selectedColumn,
-    newColumnCount * mousePosition,
-    mousePosition
-  );
+  // console.log(
+  //   "selectedColumn",
+  //   selectedColumn,
+  //   newColumnCount * mousePosition,
+  //   mousePosition
+  // );
 
   const rightToLeft = selectedColumn < newEntry.column;
-  console.log("rightToLeft", rightToLeft);
+  // console.log("rightToLeft", rightToLeft);
   if (selectedColumn === 0) {
     group = group.map((entry) => ({
       ...entry,
@@ -108,14 +108,14 @@ export function layoutGroupAfterMove(
   //       ? entry.column
   //       : entry.column + 1,
   // }));
-  console.log(
-    "after",
-    group.map((entry) => entry.column)
-  );
-  console.log(
-    "newEntry.column",
-    rightToLeft ? selectedColumn : selectedColumn + 1
-  );
+  // console.log(
+  //   "after",
+  //   group.map((entry) => entry.column)
+  // );
+  // console.log(
+  //   "newEntry.column",
+  //   rightToLeft ? selectedColumn : selectedColumn + 1
+  // );
   group = [
     ...group,
     {
@@ -127,10 +127,10 @@ export function layoutGroupAfterMove(
   // const columns = 2; // TODO: calculate based on max number of parallel entries in the group
   // const columnWidth = 100 / columns;
   const sortedGroup = [...group].sort((a, b) => a.column - b.column);
-  console.log(
-    "sorted",
-    sortedGroup.map((entry) => entry.column)
-  );
+  // console.log(
+  //   "sorted",
+  //   sortedGroup.map((entry) => entry.column)
+  // );
   const newGroup = [];
   for (const entry of sortedGroup) {
     const overlappingEntries = newGroup.filter((e) => overlap(e, entry));

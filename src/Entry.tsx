@@ -7,6 +7,7 @@ import { minutesToPixels, pixelsToMinutes } from "./util";
 import { layout } from "./layout";
 
 export interface Entry {
+  type: "contrib" | "block" | "break";
   id: number;
   title: string;
   startDt: any;
@@ -41,6 +42,8 @@ export function TimetableEntry({ id, title, startDt, duration }: Entry) {
 interface DraggableEntryProps extends EntryWithPosition {
   setDuration: (duration: number) => void;
   setChildren: (children: ChildEntryWithPosition[]) => void;
+  parentStartDt?: moment.Moment;
+  parentEndDt?: moment.Moment;
 }
 
 export function DraggableEntry({
@@ -55,6 +58,8 @@ export function DraggableEntry({
   maxColumn,
   children,
   setDuration: _setDuration,
+  parentStartDt,
+  parentEndDt,
 }: DraggableEntryProps) {
   const resizeStartRef = useRef(null);
   const [isResizing, setIsResizing] = useState(false);
@@ -105,10 +110,15 @@ export function DraggableEntry({
       document.body.style.cursor = "";
       const dx = e.clientY - (resizeStartRef.current || 0); // Resix=ze from right to left
       const newWidth = duration + pixelsToMinutes(dx);
-      console.log("setting duration", newWidth);
+      // console.log("setting duration", newWidth);
+      const newEnd = moment(startDt).add(newWidth, "minutes");
 
-      if (newWidth >= 10) {
+      if (newWidth >= 10 && (!parentEndDt || newEnd.isBefore(parentEndDt))) {
         _setDuration(newWidth);
+      }
+      if (parentEndDt && newEnd.isAfter(parentEndDt)) {
+        console.log("cannot resize beyond parent end");
+        setDuration(duration);
       }
       setIsResizing(false);
     };
@@ -145,6 +155,7 @@ export function DraggableEntry({
         ref={setNodeRef}
         style={{
           cursor: isResizing ? undefined : isDragging ? "grabbing" : "grab",
+          zIndex: isResizing ? 900 : undefined,
         }}
         {...listeners}
         {...attributes}
@@ -184,11 +195,11 @@ export function DraggableBlockEntry({
   width,
   column,
   maxColumn,
-  children,
+  children: _children,
   setDuration: _setDuration,
-  setChildren,
+  setChildren: _setChildren,
 }: DraggableEntryProps) {
-  if (!children) {
+  if (!_children) {
     throw new Error("Children is required");
   }
 
@@ -196,6 +207,7 @@ export function DraggableBlockEntry({
   const resizeStartRef = useRef(null);
   const [isResizing, setIsResizing] = useState(false);
   const [duration, setDuration] = useState(_duration);
+  // const [children, xsetChildren] = useState(_children);
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id,
@@ -219,6 +231,7 @@ export function DraggableBlockEntry({
     height: minutesToPixels(duration),
     // flexDirection: "column",
     textAlign: "left",
+    zIndex: isResizing ? 900 : undefined,
   };
 
   useEffect(() => {
@@ -255,7 +268,7 @@ export function DraggableBlockEntry({
       document.body.style.cursor = "";
       const dx = e.clientY - (resizeStartRef.current || 0); // Resix=ze from right to left
       const newWidth = duration + pixelsToMinutes(dx);
-      console.log("setting duration", newWidth);
+      // console.log("setting duration", newWidth);
 
       if (newWidth >= 10) {
         _setDuration(newWidth);
@@ -273,6 +286,12 @@ export function DraggableBlockEntry({
     .add(deltaMinutes + duration, "minutes")
     .format("HH:mm");
 
+  // shift children startDt by deltaMinutes
+  const children = _children.map((child) => ({
+    ...child,
+    startDt: moment(child.startDt).add(deltaMinutes, "minutes"),
+  }));
+
   const component = (
     <SessionBlock
       title={title}
@@ -283,14 +302,26 @@ export function DraggableBlockEntry({
     />
   );
 
-  const makeSetDuration = (id: number) => (duration: number) => {
-    setChildren(
+  const makeSetDuration = (id: number) => (d: number) => {
+    // const e = children.find((entry) => entry.id === id);
+    // console.log(
+    //   moment(e.startDt).add(d, "minutes").format("HH:mm"),
+    //   moment(startDt).add(duration, "minutes").format("HH:mm"),
+    //   moment(e.startDt)
+    //     .add(d, "minutes")
+    //     .isBefore(moment(startDt).add(duration, "minutes"))
+    // );
+    _setChildren(
       layout(
         children.map((entry) => {
           if (entry.id === id) {
             return {
               ...entry,
-              duration,
+              duration: moment(entry.startDt)
+                .add(d, "minutes")
+                .isBefore(moment(startDt).add(duration, "minutes"))
+                ? d
+                : entry.duration,
             };
           }
           return entry;
@@ -301,7 +332,7 @@ export function DraggableBlockEntry({
 
   return (
     <button
-      className="entry"
+      className="entry block"
       style={style}
       // {...listeners}
       // {...attributes}
@@ -320,13 +351,22 @@ export function DraggableBlockEntry({
       </div>
       <div
         ref={setDroppableNodeRef}
-        style={{ backgroundColor: "purple", flexGrow: 1, position: "relative" }}
+        style={{
+          backgroundColor: "purple",
+          flexGrow: 1,
+          position: "relative",
+          borderRadius: 6,
+        }}
       >
         {children.map((child) => (
           <DraggableEntry
             key={child.id}
             setChildren={() => {}}
             setDuration={makeSetDuration(child.id)}
+            parentEndDt={moment(startDt).add(
+              deltaMinutes + duration,
+              "minutes"
+            )}
             {...child}
           />
         ))}
@@ -351,7 +391,6 @@ function SessionBlock({
 }) {
   return (
     <div>
-      {"<B>"}
       {title} ({start} - {end})
     </div>
   );
