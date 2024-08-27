@@ -1,32 +1,30 @@
-import { EntryWithPosition } from "./Entry";
-import { Entry } from "./types";
+import { Entry, TopLevelEntry } from "./types.ts";
+import { lcm } from "./util.ts";
 
-function overlap(a: Entry, b: Entry) {
+function overlap<T extends Entry>(a: T, b: T) {
   const aEnd = a.startDt.clone().add(a.duration, "minutes");
   const bEnd = b.startDt.clone().add(b.duration, "minutes");
   return a.startDt < bEnd && b.startDt < aEnd;
 }
 
-export function layout(entries: EntryWithPosition[]) {
+export function layout<T extends Entry>(entries: T[]) {
   const groups = getGroups(entries);
-  // console.log("groups", groups);
-  let newEntries = [];
+  let newEntries: T[] = [];
   for (const group of groups) {
     const groupEntries = entries.filter((entry) => group.has(entry.id));
     newEntries = [...newEntries, ...layoutGroup(groupEntries)];
   }
-  // console.log(newEntries);
   return newEntries;
 }
 
-export function layoutGroup(group: EntryWithPosition[]) {
-  // const columns = 2; // TODO: calculate based on max number of parallel entries in the group
-  // const columnWidth = 100 / columns;
+export function layoutGroup<T extends Entry>(group: T[]) {
   group = group.map((entry) =>
-    entry.children ? { ...entry, children: layout(entry.children) } : entry
+    entry.type === "block"
+      ? { ...entry, children: layout(entry.children) }
+      : entry
   );
   const sortedGroup = [...group].sort((a, b) => a.column - b.column);
-  const newGroup = [];
+  const newGroup: T[] = [];
   for (const entry of sortedGroup) {
     const overlappingEntries = newGroup.filter((e) => overlap(e, entry));
     const maxColumn = Math.max(...overlappingEntries.map((e) => e.column), 0);
@@ -37,7 +35,6 @@ export function layoutGroup(group: EntryWithPosition[]) {
     });
   }
   const maxColumn = getMaximumParallelEntries(newGroup);
-  // console.log("maxColumn", maxColumn);
   const columnWidth = 100 / (maxColumn + 1);
   return newGroup.map((entry) => ({
     ...entry,
@@ -47,9 +44,9 @@ export function layoutGroup(group: EntryWithPosition[]) {
   }));
 }
 
-export function layoutGroupAfterMove(
-  group: EntryWithPosition[],
-  newEntry: EntryWithPosition,
+export function layoutGroupAfterMove<T extends Entry>(
+  group: T[],
+  newEntry: T,
   mousePosition: number
 ) {
   const columnCounts = new Set(group.map((entry) => entry.maxColumn + 1));
@@ -59,11 +56,7 @@ export function layoutGroupAfterMove(
     column: ((entry.column + 1) * newColumnCount) / (1 + entry.maxColumn) - 1,
     maxColumn: newColumnCount,
   }));
-  // console.log("newColumnCount", newColumnCount);
-  // console.log(
-  //   "new columns",
-  //   group.map((entry) => entry.column)
-  // );
+
   newEntry = {
     ...newEntry,
     column:
@@ -72,12 +65,6 @@ export function layoutGroupAfterMove(
   };
 
   const selectedColumn = Math.floor(newColumnCount * mousePosition);
-  // console.log(
-  //   "selectedColumn",
-  //   selectedColumn,
-  //   newColumnCount * mousePosition,
-  //   mousePosition
-  // );
 
   const rightToLeft = selectedColumn < newEntry.column;
   // console.log("rightToLeft", rightToLeft);
@@ -87,6 +74,7 @@ export function layoutGroupAfterMove(
       column: entry.column + 1,
     }));
   } else if (selectedColumn === newColumnCount - 1) {
+    // TODO
   } else if (rightToLeft) {
     group = group.map((entry) => ({
       ...entry,
@@ -99,23 +87,6 @@ export function layoutGroupAfterMove(
     }));
   }
 
-  // group = group.map((entry) => ({
-  //   ...entry,
-  //   column:
-  //     selectedColumn === 0
-  //       ? entry.column + 1
-  //       : entry.column < selectedColumn
-  //       ? entry.column
-  //       : entry.column + 1,
-  // }));
-  // console.log(
-  //   "after",
-  //   group.map((entry) => entry.column)
-  // );
-  // console.log(
-  //   "newEntry.column",
-  //   rightToLeft ? selectedColumn : selectedColumn + 1
-  // );
   group = [
     ...group,
     {
@@ -124,14 +95,9 @@ export function layoutGroupAfterMove(
       maxColumn: newColumnCount,
     },
   ];
-  // const columns = 2; // TODO: calculate based on max number of parallel entries in the group
-  // const columnWidth = 100 / columns;
+
   const sortedGroup = [...group].sort((a, b) => a.column - b.column);
-  // console.log(
-  //   "sorted",
-  //   sortedGroup.map((entry) => entry.column)
-  // );
-  const newGroup = [];
+  const newGroup: T[] = [];
   for (const entry of sortedGroup) {
     const overlappingEntries = newGroup.filter((e) => overlap(e, entry));
     const maxColumn = Math.max(...overlappingEntries.map((e) => e.column), 0);
@@ -142,7 +108,6 @@ export function layoutGroupAfterMove(
     });
   }
   const maxColumn = getMaximumParallelEntries(newGroup);
-  // console.log("maxColumn", maxColumn);
   const columnWidth = 100 / (maxColumn + 1);
   return newGroup.map((entry) => ({
     ...entry,
@@ -152,7 +117,7 @@ export function layoutGroupAfterMove(
   }));
 }
 
-export function getGroups(entries: EntryWithPosition[]) {
+export function getGroups(entries: TopLevelEntry[]) {
   const groups: Set<number>[] = [];
   const seen = new Set<number>();
 
@@ -171,10 +136,7 @@ export function getGroups(entries: EntryWithPosition[]) {
   return groups;
 }
 
-export function getGroup(
-  entry: EntryWithPosition,
-  entries: EntryWithPosition[]
-) {
+export function getGroup(entry: TopLevelEntry, entries: TopLevelEntry[]) {
   const group = new Set<number>();
   const seen = new Set<number>();
   seen.add(entry.id);
@@ -182,29 +144,9 @@ export function getGroup(
   return group;
 }
 
-// lcm of arbitratory number of numbers
-export function lcm(...args: number[]) {
-  return args.reduce((acc, curr) => (acc * curr) / gcd(acc, curr), 1);
-}
-
-// export function lcm(a: number, b: number) {
-//   return Math.abs(a * b) / gcd(a, b);
-// }
-
-export function gcd(a: number, b: number) {
-  a = Math.abs(a);
-  b = Math.abs(b);
-  while (b) {
-    const t = b;
-    b = a % b;
-    a = t;
-  }
-  return a;
-}
-
 function dfs(
   curr: Entry,
-  entries: EntryWithPosition[],
+  entries: TopLevelEntry[],
   group: Set<number>,
   seen: Set<number>
 ) {
@@ -221,17 +163,13 @@ function dfs(
   }
 }
 
-function getMaximumParallelEntries(entries: EntryWithPosition[]) {
+function getMaximumParallelEntries(entries: TopLevelEntry[]) {
   return Math.max(...entries.map((entry) => entry.column), 0);
 }
 
-function dxToColumn(dx: number, columnWidth: number) {
-  return Math.round(dx / columnWidth);
-}
-
 export function getParallelEntries(
-  entry: EntryWithPosition,
-  entries: EntryWithPosition[]
+  entry: TopLevelEntry,
+  entries: TopLevelEntry[]
 ) {
   return entries.filter((e) => overlap(e, entry));
 }
