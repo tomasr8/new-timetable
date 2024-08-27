@@ -17,7 +17,12 @@ import moment from "moment";
 
 import "./App.scss";
 
-import { DraggableEntry, Entry, EntryWithPosition } from "./Entry";
+import {
+  DraggableBlockEntry,
+  DraggableEntry,
+  Entry,
+  EntryWithPosition,
+} from "./Entry";
 import { minutesToPixels, pixelsToMinutes } from "./util";
 import { getGroup, getGroups, layout, layoutGroupAfterMove } from "./layout";
 
@@ -101,8 +106,43 @@ function App() {
       column: 0,
       maxColumn: 0,
     },
+    {
+      id: 7,
+      title: "Scientific Computing",
+      startDt: moment("2024-01-01T06:00:00"),
+      duration: 120,
+      x: 0,
+      y: minutesToPixels(360),
+      width: "100%",
+      column: 0,
+      maxColumn: 0,
+      children: [
+        {
+          id: 8,
+          title: "Scientific Computing 1",
+          startDt: moment("2024-01-01T06:00:00"),
+          duration: 60,
+          x: 0,
+          y: minutesToPixels(0),
+          width: "100%",
+          column: 0,
+          maxColumn: 0,
+        },
+        {
+          id: 9,
+          title: "Scientific Computing 2",
+          startDt: moment("2024-01-01T07:00:00"),
+          duration: 60,
+          x: 0,
+          y: minutesToPixels(60),
+          width: "100%",
+          column: 0,
+          maxColumn: 0,
+        },
+      ],
+    },
   ];
-  const [entries, setEntries] = useState(_entries);
+  const [entries, setEntries] = useState<EntryWithPosition[]>(layout(_entries));
 
   // console.log("entries", entries);
   // console.log("getGroups", getGroups(entries));
@@ -135,6 +175,23 @@ function App() {
     );
   };
 
+  const makeSetChildren = (id) => (children) => {
+    console.log("setting children", children);
+    setEntries((entries) =>
+      layout(
+        entries.map((entry) => {
+          if (entry.id === id) {
+            return {
+              ...entry,
+              children,
+            };
+          }
+          return entry;
+        })
+      )
+    );
+  };
+
   return (
     <DndContext
       onDragEnd={handleDragEnd}
@@ -151,13 +208,23 @@ function App() {
         <TimeGutter />
         <div ref={wrapperRef}>
           <DroppableCalendar>
-            {entries.map((entry) => (
-              <DraggableEntry
-                key={entry.id}
-                setDuration={makeSetDuration(entry.id)}
-                {...entry}
-              />
-            ))}
+            {entries.map((entry) =>
+              entry.children ? (
+                <DraggableBlockEntry
+                  key={entry.id}
+                  setDuration={makeSetDuration(entry.id)}
+                  setChildren={makeSetChildren(entry.id)}
+                  {...entry}
+                />
+              ) : (
+                <DraggableEntry
+                  key={entry.id}
+                  setDuration={makeSetDuration(entry.id)}
+                  setChildren={makeSetChildren(entry.id)}
+                  {...entry}
+                />
+              )
+            )}
           </DroppableCalendar>
         </div>
       </div>
@@ -170,21 +237,35 @@ function App() {
 
   function handleDragEnd(event) {
     // console.log("event", event, mouseRef.current.pageX);
-    // console.log("event", event);
+    console.log("event", event);
+    console.log(
+      "mouse",
+      mouseEventRef.current.pageX - event.over.rect.left,
+      event.delta.y
+    );
     // console.log(
     //   "mouse position",
     //   mouseEventRef.current.pageX - wrapperRef.current.offsetLeft,
     //   // get the width of wrapperRef
     //   wrapperRef.current.offsetWidth
     // );
-    if (event.over && event.over.id === "calendar") {
-      const mousePosition = (mouseEventRef.current.pageX - wrapperRef.current.offsetLeft) / wrapperRef.current.offsetWidth;
+    if (!event.over) {
+      console.log("not over anything..");
+      return;
+    }
+    if (event.over.id === "calendar") {
+      const mousePosition =
+        (mouseEventRef.current.pageX - wrapperRef.current.offsetLeft) /
+        wrapperRef.current.offsetWidth;
       const { id } = event.active;
       const { x, y } = event.delta;
       // const dx = x / 800; // Change this
       const deltaMinutes = pixelsToMinutes(y);
       // console.log("x", x, "y", y);
-      let entry = entries.find((entry) => entry.id === id)!;
+      let entry = entries.find((entry) => entry.id === id);
+      if (!entry) {
+        return;
+      }
       entry = {
         ...entry,
         startDt: moment(entry.startDt).add(deltaMinutes, "minutes"),
@@ -209,18 +290,53 @@ function App() {
       // console.log("other  entries", otherEntries);
       // console.log([...otherEntries, ...group]);
       setEntries(layout([...otherEntries, ...group]));
-      // const newEntries = entries.map((entry) => {
-      //   if (entry.id === id) {
-      //     return {
-      //       ...entry,
-      //       startDt: moment(entry.startDt).add(deltaMinutes, "minutes"),
-      //       x: entry.x + x,
-      //       y: entry.y + y,
-      //     };
-      //   }
-      //   return entry;
-      // });
-      // setEntries(layout(newEntries));
+    } else {
+      // const id = event.over.id;
+      const block = entries.find((entry) => entry.id === event.over.id)!;
+      const mousePosition =
+        (mouseEventRef.current.pageX - event.over.rect.left) /
+        event.over.rect.width;
+      const { id } = event.active;
+      const { x, y } = event.delta;
+      // const dx = x / 800; // Change this
+      const deltaMinutes = pixelsToMinutes(y);
+      // console.log("x", x, "y", y);
+      let entry = block.children.find((entry) => entry.id === id);
+      if (!entry) {
+        console.log("can only handle entries from the same block for now");
+        return;
+      }
+      entry = {
+        ...entry,
+        startDt: moment(entry.startDt).add(deltaMinutes, "minutes"),
+        x: entry.x + x,
+        y: entry.y + y,
+      };
+      // console.log("new entry start", entry.startDt.format("HH:mm"));
+      const groupIds = getGroup(
+        entry,
+        block.children.filter((e) => e.id !== entry.id)
+      );
+      let group = block.children.filter((e) => groupIds.has(e.id));
+      // console.log(
+      //   "new group",
+      //   group.map((e) => e.title)
+      // );
+      group = layoutGroupAfterMove(group, entry, mousePosition);
+
+      // console.log("after move", group);
+      const otherChildren = block.children.filter(
+        (e) => !groupIds.has(e.id) && e.id !== entry.id
+      );
+      const otherEntries = entries.filter((e) => e.id !== block.id);
+      // console.log("other  entries", otherEntries);
+      // console.log([...otherEntries, ...group]);
+      setEntries(
+        layout([
+          ...otherEntries,
+          { ...block, children: [...otherChildren, ...group] },
+        ])
+      );
     }
   }
 }

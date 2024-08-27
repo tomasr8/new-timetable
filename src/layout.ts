@@ -22,6 +22,9 @@ export function layout(entries: EntryWithPosition[]) {
 export function layoutGroup(group: EntryWithPosition[]) {
   // const columns = 2; // TODO: calculate based on max number of parallel entries in the group
   // const columnWidth = 100 / columns;
+  group = group.map((entry) =>
+    entry.children ? { ...entry, children: layout(entry.children) } : entry
+  );
   const sortedGroup = [...group].sort((a, b) => a.column - b.column);
   const newGroup = [];
   for (const entry of sortedGroup) {
