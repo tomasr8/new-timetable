@@ -6,7 +6,7 @@ import {
   MouseEvent as SyntheticMouseEvent,
 } from "react";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
-import moment, { Moment } from "moment";
+import moment from "moment";
 
 import { minutesToPixels, pixelsToMinutes } from "./util";
 import { layout } from "./layout";

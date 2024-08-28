@@ -378,7 +378,7 @@ export default function App() {
 
     let entry: ChildEntry | undefined;
     if (!fromBlock) {
-      entry = entries.find((e) => e.id === event.active.id);
+      entry = entries.find((e) => e.id === event.active.id) as ChildEntry;  // TODO: fix this
       if (!entry || entry.type !== "break") {
         return;
       }
