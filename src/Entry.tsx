@@ -86,6 +86,7 @@ function ResizeHandle({
 }
 
 export function DraggableEntry({
+  type,
   id,
   startDt,
   duration: _duration,
@@ -129,7 +130,10 @@ export function DraggableEntry({
     .format("HH:mm");
 
   return (
-    <button className="entry" style={style}>
+    <button
+      className={`entry ${type === "break" ? "break" : ""}`}
+      style={style}
+    >
       <div
         className="drag-handle"
         ref={setNodeRef}
@@ -290,7 +294,6 @@ export function DraggableBlockEntry({
       <div
         ref={setDroppableNodeRef}
         style={{
-          backgroundColor: "purple",
           flexGrow: 1,
           position: "relative",
           borderRadius: 6,

@@ -17,7 +17,7 @@ import { BlockEntry, ChildEntry, TopLevelEntry } from "./types";
 
 const dummyEntries: TopLevelEntry[] = [
   {
-    type: "contrib",
+    type: "break",
     id: 1,
     title: "Lunch break",
     startDt: moment("2024-01-01T05:00:00"),
