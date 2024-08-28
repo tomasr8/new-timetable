@@ -5,8 +5,10 @@ RUN apk add --update git
 ENV NODE_ENV=production
 WORKDIR /app
 
-COPY . .
+COPY package.json package-lock.json tsconfig.json tsconfig.app.json tsconfig.node.json vite.config.ts index.html ./
+COPY src src
 
+RUN npm ci --include=dev
 RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:stable-alpine
